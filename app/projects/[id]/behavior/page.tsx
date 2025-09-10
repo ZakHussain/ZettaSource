@@ -10,16 +10,19 @@ import yaml from "js-yaml";
 import BehaviorEditor from "@/components/behavior/BehaviorEditor";
 import SchemaPreview from "@/components/behavior/SchemaPreview";
 import CodegenPanel from "@/components/behavior/CodegenPanel";
+import { GuideInfoBox } from "@/components/guide/GuideInfoBox";
 
 export default function BehaviorEditorPage() {
   const { id: projectId } = useParams() as { id: string };
   const [dslText, setDslText] = useState<string>("");
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const [isValidating, setIsValidating] = useState(false);
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
-  
-  const project = useStore(s => s.projects.find(p => p.id === projectId));
-  const setBehaviorDsl = useStore(s => s.setBehaviorDsl);
+
+  const project = useStore((s) => s.projects.find((p) => p.id === projectId));
+  const setBehaviorDsl = useStore((s) => s.setBehaviorDsl);
 
   // Initialize DSL text from project or default example
   useEffect(() => {
@@ -34,7 +37,7 @@ export default function BehaviorEditorPage() {
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
-    
+
     setIsValidating(true);
     debounceTimeoutRef.current = setTimeout(() => {
       setIsValidating(false);
@@ -42,54 +45,61 @@ export default function BehaviorEditorPage() {
   }, []);
 
   // Handle DSL text changes with debounced validation
-  const handleDslChange = useCallback((newValue: string) => {
-    setDslText(newValue);
-    debouncedValidate(newValue);
-  }, [debouncedValidate]);
+  const handleDslChange = useCallback(
+    (newValue: string) => {
+      setDslText(newValue);
+      debouncedValidate(newValue);
+    },
+    [debouncedValidate]
+  );
 
   // Parse and validate current DSL text
   const { validationResult, parsedData, parseError } = useMemo(() => {
     if (!dslText.trim()) {
-      return { 
+      return {
         validationResult: { type: "empty" as const },
         parsedData: null,
-        parseError: undefined
+        parseError: undefined,
       };
     }
 
     try {
       const parsed = yaml.load(dslText);
       const validation = validateBehavior(parsed);
-      
+
       if (validation.success) {
         return {
           validationResult: { type: "valid" as const, data: validation.data },
           parsedData: validation.data,
-          parseError: undefined
+          parseError: undefined,
         };
       } else {
         return {
-          validationResult: { type: "invalid" as const, errors: validation.errors },
+          validationResult: {
+            type: "invalid" as const,
+            errors: validation.errors,
+          },
           parsedData: null,
-          parseError: validation.errors.join('\n')
+          parseError: validation.errors.join("\n"),
         };
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Invalid YAML syntax";
+      const errorMessage =
+        error instanceof Error ? error.message : "Invalid YAML syntax";
       return {
-        validationResult: { 
-          type: "yaml_error" as const, 
-          error: errorMessage 
+        validationResult: {
+          type: "yaml_error" as const,
+          error: errorMessage,
         },
         parsedData: null,
-        parseError: errorMessage
+        parseError: errorMessage,
       };
     }
   }, [dslText]);
 
   const handleSave = useCallback(async () => {
     if (!project) return;
-    
+
     setSaveStatus("saving");
     try {
       setBehaviorDsl(projectId, dslText);
@@ -115,41 +125,105 @@ export default function BehaviorEditorPage() {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-semibold mb-2">Project not found</h1>
-        <p className="text-white/60">The project you're looking for doesn't exist.</p>
+        <p className="text-white/60">
+          The project you&apos;re looking for doesn&apos;t exist.
+        </p>
       </div>
     );
   }
 
   const getSaveButtonText = () => {
     switch (saveStatus) {
-      case "saving": return "Saving...";
-      case "saved": return "Saved!";
-      case "error": return "Save Failed";
-      default: return "Save Behavior";
+      case "saving":
+        return "Saving...";
+      case "saved":
+        return "Saved!";
+      case "error":
+        return "Save Failed";
+      default:
+        return "Save Behavior";
     }
   };
 
   const getSaveButtonClass = () => {
     switch (saveStatus) {
-      case "saving": return "bg-yellow-500/20 border-yellow-500/30 text-yellow-300 cursor-wait";
-      case "saved": return "bg-green-500/20 border-green-500/30 text-green-300";
-      case "error": return "bg-red-500/20 border-red-500/30 text-red-300";
-      default: return "bg-teal-400/20 border-teal-400/30 hover:bg-teal-400/30 transition";
+      case "saving":
+        return "bg-yellow-500/20 border-yellow-500/30 text-yellow-300 cursor-wait";
+      case "saved":
+        return "bg-green-500/20 border-green-500/30 text-green-300";
+      case "error":
+        return "bg-red-500/20 border-red-500/30 text-red-300";
+      default:
+        return "bg-teal-400/20 border-teal-400/30 hover:bg-teal-400/30 transition";
     }
   };
 
   const getValidationStatus = () => {
     switch (validationResult.type) {
       case "empty":
-        return { icon: AlertTriangle, text: "Empty behavior", color: "text-white/60" };
+        return {
+          icon: AlertTriangle,
+          text: "Empty behavior",
+          color: "text-white/60",
+        };
       case "valid":
-        return { icon: CheckCircle, text: "Valid behavior", color: "text-green-400" };
+        return {
+          icon: CheckCircle,
+          text: "Valid behavior",
+          color: "text-green-400",
+        };
       case "invalid":
-        return { icon: AlertTriangle, text: "Invalid behavior", color: "text-red-400" };
+        return {
+          icon: AlertTriangle,
+          text: "Invalid behavior",
+          color: "text-red-400",
+        };
       case "yaml_error":
-        return { icon: AlertTriangle, text: "YAML syntax error", color: "text-red-400" };
+        return {
+          icon: AlertTriangle,
+          text: "YAML syntax error",
+          color: "text-red-400",
+        };
     }
   };
+
+  const InfoCard = (
+    <GuideInfoBox>
+      <ul>
+        <li className="text-l">
+          🤖
+          <span className="ml-2">
+            Welcome to the 6502 Retrieval Agent! This system lets you upload
+            your 6502 datasheets and query detailed information about the
+            devices and vasm_oldstyle assembly language.
+          </span>
+        </li>
+        <li className="text-l">
+          📄
+          <span className="ml-2">
+            Use the uploader below to ingest your datasheets. Your files will be
+            vectorized and stored for efficient retrieval.
+          </span>
+        </li>
+        <li className="text-l">
+          💬
+          <span className="ml-2">
+            Once uploaded, simply ask questions about the 6502, its datasheets,
+            or vasm_oldstyle assembly—for example, &quot;How does the 6502
+            handle interrupts?&quot; or &quot;What is the memory map for the
+            6502?&quot;
+          </span>
+        </li>
+        <li className="text-l">
+          🚀
+          <span className="ml-2">
+            Start by uploading your files, then type your query in the chat
+            window below!
+          </span>
+        </li>
+      </ul>
+    </GuideInfoBox>
+  );
 
   const validationStatus = getValidationStatus();
   const ValidationIcon = validationStatus.icon;
@@ -158,7 +232,7 @@ export default function BehaviorEditorPage() {
     <div className="space-y-6 h-full flex flex-col">
       {/* Back Navigation */}
       <div>
-        <Link 
+        <Link
           href="/"
           className="inline-flex items-center gap-2 text-white/60 hover:text-white transition"
         >
@@ -183,7 +257,7 @@ export default function BehaviorEditorPage() {
               {validationStatus.text}
             </span>
           </div>
-          
+
           {/* Save Button */}
           <button
             onClick={handleSave}
@@ -204,17 +278,22 @@ export default function BehaviorEditorPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">DSL Editor</h2>
               <div className="text-sm text-white/60">
-                Lines: {dslText.split('\n').length}
+                Lines: {dslText.split("\n").length}
               </div>
             </div>
-            
+
             {/* Behavior Editor */}
             <div className="flex-1 min-h-[300px] relative">
               <BehaviorEditor
                 value={dslText}
                 onChange={handleDslChange}
-                errors={validationResult.type === "invalid" ? validationResult.errors : 
-                       validationResult.type === "yaml_error" ? [validationResult.error] : []}
+                errors={
+                  validationResult.type === "invalid"
+                    ? validationResult.errors
+                    : validationResult.type === "yaml_error"
+                    ? [validationResult.error]
+                    : []
+                }
               />
             </div>
           </div>
@@ -237,10 +316,7 @@ export default function BehaviorEditorPage() {
         <div className="xl:col-span-1">
           <div className="card-base p-6 flex flex-col min-h-[400px] h-full">
             <div className="flex-1 min-h-0 overflow-auto">
-              <CodegenPanel
-                projectId={projectId}
-                dslText={dslText}
-              />
+              <CodegenPanel projectId={projectId} dslText={dslText} />
             </div>
           </div>
         </div>
