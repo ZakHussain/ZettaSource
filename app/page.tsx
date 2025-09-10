@@ -42,6 +42,9 @@ export default function Home() {
                     <Link href={`/projects/${p.id}/docs`} className="text-[color:var(--teal)] hover:underline">
                       Documents
                     </Link>
+                    <Link href={`/projects/${p.id}/docs`} className="text-[color:var(--teal)] hover:underline">
+                      Documents
+                    </Link>                    
                   </div>
                 </div>
               </div>
